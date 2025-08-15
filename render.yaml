@@ -9,14 +9,17 @@ services:
     
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.3 # Garanta que esta é a sua versão do Python
+        value: 3.12.3
 
-      # Para os segredos, apenas definimos a chave.
-      # O Render irá solicitar o valor na interface e o armazenará de forma segura.
       - key: DB_USER
+        sync: false
       - key: DB_PASSWORD
+        sync: false
       - key: DB_HOST
+        sync: false
       - key: DB_PORT
+        sync: false
       - key: DB_NAME
+        sync: false
       - key: JWT_SECRET_KEY
-      - key: API_KEY_STORMGLASS
+        sync: false
