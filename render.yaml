@@ -1,29 +1,22 @@
 services:
-  # Define o nosso serviço de API web
   - type: web
     name: thecheck-api
     env: python
-    plan: free # Comece com o plano gratuito. Mude para 'starter' se precisar de mais recursos.
+    plan: free
     
-    # Comando para instalar as dependências
     buildCommand: "pip install -r requirements.txt"
-    
-    # Comando para iniciar a aplicação. ESSENCIAL!
     startCommand: "uvicorn app:app --host 0.0.0.0 --port $PORT"
     
-    # Define as variáveis de ambiente. Usaremos os "Secret Files" do Render para os valores.
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.3 # Use a mesma versão do seu ambiente conda para consistência
+        value: 3.12.3 # Garanta que esta é a sua versão do Python
+
+      # Para os segredos, apenas definimos a chave.
+      # O Render irá solicitar o valor na interface e o armazenará de forma segura.
       - key: DB_USER
-        fromSecret: true
       - key: DB_PASSWORD
-        fromSecret: true
       - key: DB_HOST
-        fromSecret: true
       - key: DB_PORT
-        fromSecret: true
       - key: DB_NAME
-        fromSecret: true
       - key: JWT_SECRET_KEY
-        fromSecret: true
+      - key: API_KEY_STORMGLASS
