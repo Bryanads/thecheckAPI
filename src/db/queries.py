@@ -236,7 +236,16 @@ async def create_user(name, email, password_hash, surf_level, goofy_regular_stan
 async def get_user_by_email(email):
     conn = await get_async_db_connection()
     try:
-        row = await conn.fetchrow("SELECT * FROM users WHERE email = $1;", email)
+        # --- CORREÇÃO AQUI: Trocamos SELECT * por uma lista explícita de colunas ---
+        row = await conn.fetchrow(
+            """
+            SELECT user_id, name, email, surf_level, goofy_regular_stance, 
+                   preferred_wave_direction, bio, profile_picture_url, 
+                   registration_timestamp, last_login_timestamp 
+            FROM users WHERE email = $1;
+            """,
+            email
+        )
         return dict(row) if row else None
     finally:
         await release_async_db_connection(conn)
@@ -248,8 +257,14 @@ async def get_user_by_id(user_id):
     """
     conn = await get_async_db_connection()
     try:
+        # --- CORREÇÃO AQUI: Removemos a coluna 'password_hash' da query ---
         row = await conn.fetchrow(
-            "SELECT user_id, name, email, password_hash, surf_level, goofy_regular_stance, preferred_wave_direction, bio, profile_picture_url, registration_timestamp, last_login_timestamp FROM users WHERE user_id = $1;",
+            """
+            SELECT user_id, name, email, surf_level, goofy_regular_stance, 
+                   preferred_wave_direction, bio, profile_picture_url, 
+                   registration_timestamp, last_login_timestamp 
+            FROM users WHERE user_id = $1;
+            """,
             user_id
         )
         return dict(row) if row else None

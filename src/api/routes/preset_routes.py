@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import datetime
+from typing import Optional, List
 from src.db.queries import (
     create_user_recommendation_preset,
     get_user_recommendation_presets,
@@ -20,18 +21,20 @@ class PresetCreateRequest(BaseModel):
     spot_ids: list[int]
     start_time: str
     end_time: str
-    weekdays: list[int] | None = None 
+    # --- SINTAXE CORRIGIDA AQUI ---
+    weekdays: Optional[List[int]] = None 
     is_default: bool = False
 
 class PresetUpdateRequest(BaseModel):
     user_id: str
-    preset_name: str | None = None
-    spot_ids: list[int] | None = None
-    start_time: str | None = None
-    end_time: str | None = None
-    weekdays: list[int] | None = None
-    is_default: bool | None = None
-    is_active: bool | None = None
+    # --- SINTAXE CORRIGIDA AQUI ---
+    preset_name: Optional[str] = None
+    spot_ids: Optional[List[int]] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    weekdays: Optional[List[int]] = None
+    is_default: Optional[bool] = None
+    is_active: Optional[bool] = None
 
 @router.post("")
 async def create_preset_endpoint(request: PresetCreateRequest):

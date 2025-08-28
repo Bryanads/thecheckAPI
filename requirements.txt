@@ -2,7 +2,5 @@ fastapi
 uvicorn[standard]
 python-dotenv
 asyncpg
-passlib[bcrypt]
-PyJWT
 numpy
 arrow
