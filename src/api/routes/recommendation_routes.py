@@ -1,4 +1,3 @@
-
 import numpy as np
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
@@ -9,11 +8,10 @@ from src.db.queries import (
     get_user_by_id,
     get_spot_preferences,
     get_forecasts_from_db,
-    get_tides_forecast_from_db,
     get_level_spot_preferences
 )
 from src.recommendation.recommendation_logic import calculate_suitability_score
-from src.utils.utils import convert_to_localtime_string, determine_tide_phase
+from src.utils.utils import convert_to_localtime_string
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
@@ -89,7 +87,6 @@ async def generate_recommendations_logic(user_id, spot_ids_list, day_offsets, st
             day_start = datetime.datetime.combine(base_date_for_offset, datetime.time.min).replace(tzinfo=datetime.timezone.utc)
             day_end = datetime.datetime.combine(base_date_for_offset, datetime.time.max).replace(tzinfo=datetime.timezone.utc)
             forecasts = await get_forecasts_from_db(spot_id, day_start, day_end)
-            tides_extremes = await get_tides_forecast_from_db(spot_id, day_start, day_end)
             day_offset_data = {
                 "day_offset": day_offset_single,
                 "recommendations": []
@@ -108,7 +105,7 @@ async def generate_recommendations_logic(user_id, spot_ids_list, day_offsets, st
                 continue
             hourly_recommendations_for_day = []
             for forecast_entry in filtered_forecasts:
-                tide_phase = determine_tide_phase(forecast_entry['timestamp_utc'], tides_extremes)
+                tide_phase = forecast_entry.get('tide_type')
                 suitability_score, detailed_scores = calculate_suitability_score(forecast_entry, spot_preferences, spot, tide_phase, user)
                 recommendation_entry = {
                     "timestamp_utc": forecast_entry['timestamp_utc'].isoformat(),

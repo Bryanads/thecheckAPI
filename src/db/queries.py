@@ -181,7 +181,7 @@ async def get_forecasts_from_db(spot_id, start_utc, end_utc):
                 swell_height_sg, swell_direction_sg, swell_period_sg,
                 secondary_swell_height_sg, secondary_swell_direction_sg, secondary_swell_period_sg,
                 wind_speed_sg, wind_direction_sg, water_temperature_sg, air_temperature_sg,
-                current_speed_sg, current_direction_sg, sea_level_sg
+                current_speed_sg, current_direction_sg, sea_level_sg, tide_type
             FROM forecasts
             WHERE spot_id = $1 AND timestamp_utc BETWEEN $2 AND $3
             ORDER BY timestamp_utc;
@@ -191,28 +191,7 @@ async def get_forecasts_from_db(spot_id, start_utc, end_utc):
         return [dict(row) for row in rows]
     finally:
         await release_async_db_connection(conn)
-
-async def get_tides_forecast_from_db(spot_id, start_utc, end_utc):
-    """
-    Fetches tide forecast data for a specific spot within a given UTC time range.
-    Returns a list of dictionaries with tide entries.
-    """
-    conn = await get_async_db_connection()
-    try:
-        rows = await conn.fetch(
-            """
-            SELECT
-                timestamp_utc, tide_type, height
-            FROM tides_forecast
-            WHERE spot_id = $1 AND timestamp_utc BETWEEN $2 AND $3
-            ORDER BY timestamp_utc;
-            """,
-            spot_id, start_utc, end_utc
-        )
-        return [dict(row) for row in rows]
-    finally:
-        await release_async_db_connection(conn)
-
+        
 # --- Funções de Usuário ---
 
 async def create_user(name, email, password_hash, surf_level, goofy_regular_stance,
@@ -497,11 +476,3 @@ async def toggle_spot_preference_active(user_id, spot_id, is_active: bool):
     finally:
         await release_async_db_connection(conn)
 
-
-# --- Sugestão de índice para performance ---
-# Certifique-se de ter índices em:
-# - spots(spot_name)
-# - forecasts(spot_id, timestamp_utc)
-# - tides_forecast(spot_id, timestamp_utc)
-# - users(email)
-# - user_recommendation_presets(user_id, is_active)
