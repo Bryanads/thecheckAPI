@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     DB_PORT: int
     DB_NAME: str
     SUPABASE_URL: str
+    SUPABASE_JWT_SECRET: str
 
     class Config:
         env_file = ".env"
