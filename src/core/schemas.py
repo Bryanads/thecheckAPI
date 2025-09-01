@@ -145,7 +145,8 @@ class DetailedScores(BaseModel):
     wave_score: float
     wind_score: float
     tide_score: float
-    temperature_score: float
+    air_temperature_score: float
+    water_temperature_score: float
 
 class Recommendation(BaseModel):
     spot_id: int

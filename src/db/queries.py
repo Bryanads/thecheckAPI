@@ -26,7 +26,7 @@ async def get_spot_by_id(spot_id: int) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
     finally:
         await conn.close()
-        
+
 async def get_profile_by_id(user_id: str) -> Optional[Dict[str, Any]]:
     """
     Busca um perfil de usuário pelo seu ID (UUID).
@@ -34,7 +34,12 @@ async def get_profile_by_id(user_id: str) -> Optional[Dict[str, Any]]:
     conn = await get_connection()
     try:
         row = await conn.fetchrow("SELECT * FROM profiles WHERE id = $1", user_id)
-        return dict(row) if row else None
+        if row:
+            profile_dict = dict(row)
+            # Explicitly convert the UUID to a string to match the schema
+            profile_dict['id'] = str(profile_dict['id'])
+            return profile_dict
+        return None
     finally:
         await conn.close()
 
