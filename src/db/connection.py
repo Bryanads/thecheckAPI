@@ -1,29 +1,48 @@
 import asyncpg
-from src.utils.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from src.core.config import settings
 
-_async_pool = None
+_pool = None
 
-async def init_async_db_pool():
-	global _async_pool
-	if _async_pool is None:
-		_async_pool = await asyncpg.create_pool(
-			user=DB_USER,
-			password=DB_PASSWORD,
-			host=DB_HOST,
-			port=DB_PORT,
-			database=DB_NAME,
-			min_size=1,
-			max_size=10
-		)
-	return _async_pool
+async def get_db_pool():
+    """
+    Inicializa e retorna o pool de conexões.
+    """
+    global _pool
+    if _pool is None:
+        print("Criando novo pool de conexões...")
+        _pool = await asyncpg.create_pool(
+            user=settings.DB_USER,
+            password=settings.DB_PASSWORD,
+            host=settings.DB_HOST,
+            port=settings.DB_PORT,
+            database=settings.DB_NAME,
+            min_size=1,
+            max_size=10
+        )
+        print("Pool de conexões criado com sucesso.")
+    return _pool
 
-async def get_async_db_connection():
-	global _async_pool
-	if _async_pool is None:
-		raise Exception("Async DB pool not initialized. Call init_async_db_pool() first.")
-	return await _async_pool.acquire()
+async def close_db_pool():
+    """
+    Fecha o pool de conexões para um encerramento limpo.
+    """
+    global _pool
+    if _pool:
+        await _pool.close()
+        _pool = None
+        print("Pool de conexões fechado.")
 
-async def release_async_db_connection(conn):
-	global _async_pool
-	if _async_pool and conn:
-		await _async_pool.release(conn)
+async def get_connection():
+    """
+    Adquire uma conexão do pool para executar uma query.
+    """
+    pool = await get_db_pool()
+    return await pool.acquire()
+
+async def release_connection(conn):
+    """
+    Libera uma conexão de volta para o pool após o uso.
+    """
+    pool = await get_db_pool()
+    if pool and conn:
+        await pool.release(conn)
