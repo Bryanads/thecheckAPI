@@ -1,9 +1,40 @@
-.venv
-.env
+# Ignora a pasta do ambiente virtual
+# O Uvicorn está rodando a partir dela, mas ela não deve ser versionada.
+.venv/
+venv/
+env/
+
+# Ignora arquivos de bytecode do Python
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
-data/
-# Ignore data/ directory because its only used for local cache storage
+
+# Ignora o arquivo de variáveis de ambiente
+# Contém chaves e senhas sensíveis, nunca deve ser versionado.
+.env
+.flaskenv
+
+# Ignora arquivos e diretórios de IDEs
+.vscode/     # VS Code
+.idea/       # PyCharm
+*.sublime-project
+*.sublime-workspace
+
+# Ignora arquivos de log e output
+logs/
+*.log
+*.sqlite3       # Se você usasse um banco de dados local como o SQLite
+/dist/
+/build/
+
+# Ignora arquivos de sistema operacional
+.DS_Store      # macOS
+Thumbs.db      # Windows
+
+# Ignora o diretório para upload de arquivos
+# Mantenha os arquivos de usuário fora do controle de versão
+/uploads/
+
+# Ignora dumps de banco de dados e arquivos de backup
+*.sql
+*.backup
