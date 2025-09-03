@@ -136,7 +136,7 @@ async def update_preset(user_id: str, preset_id: int, updates: Dict[str, Any]) -
             return updated_preset
         return None
     finally:
-        await conn.close())
+        await conn.close()
 
 async def delete_preset(user_id: str, preset_id: int) -> bool:
     """Deleta um preset de um usuário."""
