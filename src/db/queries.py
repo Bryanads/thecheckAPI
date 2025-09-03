@@ -103,7 +103,14 @@ async def get_presets_by_user_id(user_id: str) -> List[Dict[str, Any]]:
     conn = await get_connection()
     try:
         rows = await conn.fetch("SELECT * FROM presets WHERE user_id = $1 ORDER BY name", user_id)
-        return [dict(row) for row in rows]
+        
+        # Converte cada linha para um dicionário e garante que o UUID seja uma string
+        presets = [dict(row) for row in rows]
+        for preset in presets:
+            if 'user_id' in preset:
+                preset['user_id'] = str(preset['user_id'])
+        
+        return presets
     finally:
         await conn.close()
 
