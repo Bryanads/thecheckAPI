@@ -129,9 +129,14 @@ async def update_preset(user_id: str, preset_id: int, updates: Dict[str, Any]) -
         values = [preset_id, user_id] + list(updates.values())
         
         updated_row = await conn.fetchrow(query, *values)
-        return dict(updated_row) if updated_row else None
+        if updated_row:
+            updated_preset = dict(updated_row)
+            # Converte o UUID para string para corresponder ao schema
+            updated_preset['user_id'] = str(updated_preset['user_id'])
+            return updated_preset
+        return None
     finally:
-        await conn.close()
+        await conn.close())
 
 async def delete_preset(user_id: str, preset_id: int) -> bool:
     """Deleta um preset de um usuário."""
