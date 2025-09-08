@@ -18,7 +18,8 @@ async def get_spot_forecast(spot_id: int):
     Retorna a previsão bruta e detalhada, organizada por dia, 
     para os próximos 7 dias para um spot_id específico.
     """
-    start_utc = datetime.datetime.now(datetime.timezone.utc)
+    start_utc = datetime.datetime.now(datetime.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+
     end_utc = start_utc + datetime.timedelta(days=7)
 
     spot_data_task = queries.get_spot_by_id(spot_id)
