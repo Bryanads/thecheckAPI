@@ -222,3 +222,4 @@ async def get_forecasts_for_spot(spot_id: int, start_utc: datetime.datetime, end
         return [dict(row) for row in rows]
     finally:
         await conn.close()
+

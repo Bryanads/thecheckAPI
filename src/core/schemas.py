@@ -124,8 +124,7 @@ class DailyForecast(BaseModel):
 class SpotForecastResponse(BaseModel):
     spot_id: int
     spot_name: str
-    daily_forecasts: List[DailyForecast]
-
+    forecasts: List[HourlyData] 
 
 class DaySelection(BaseModel):
     type: str 
