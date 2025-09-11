@@ -50,10 +50,11 @@ app.include_router(forecasts_router)
 async def read_root():
     return {"message": "Bem-vindo à API V2 do The Check!"}
     
-@app.get("/health", tags=["Health Check"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["Health Check"])
 async def health_check():
     """
     Endpoint simples para monitoramento de saúde da API.
+    Aceita GET e HEAD.
     """
     return {"status": "ok"}
 
