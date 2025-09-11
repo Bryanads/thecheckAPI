@@ -148,6 +148,18 @@ class DetailedScores(BaseModel):
     air_temperature_score: float
     water_temperature_score: float
 
+class SpotDailySummary(BaseModel):
+    spot_id: int
+    spot_name: str
+    best_hour_utc: datetime.datetime
+    best_overall_score: float
+    detailed_scores: DetailedScores
+    forecast_conditions: ForecastConditions
+
+class DailyRecommendation(BaseModel):
+    date: datetime.date
+    ranked_spots: List[SpotDailySummary]
+
 # --- NOVOS SCHEMAS PARA A RESPOSTA DE RECOMENDAÇÃO ---
 
 class HourlyRecommendation(BaseModel):

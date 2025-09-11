@@ -1,18 +1,16 @@
+# bryanads/thecheckapi/thecheckAPI-16b9a78c834b43d2ae715994e6bdff06b4aed85d/src/api/routes/recommendations.py
 import datetime
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from collections import defaultdict
 
-from src.core.schemas import RecommendationRequest, SpotRecommendation, DayOffsetRecommendations, Preference
+from src.core.schemas import RecommendationRequest, DailyRecommendation, SpotDailySummary
 from src.db import queries
 from src.api.dependencies.auth import get_current_user_id
 from src.services.scoring_service import calculate_overall_score
 
-router = APIRouter(
-    prefix="/recommendations",
-    tags=["Recommendations"]
-)
+router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
 def weekdays_to_offsets(weekdays: List[int]) -> List[int]:
     if not weekdays:
@@ -29,7 +27,7 @@ def weekdays_to_offsets(weekdays: List[int]) -> List[int]:
     
     return offsets if offsets else [0]
 
-@router.post("/", response_model=List[SpotRecommendation])
+@router.post("/", response_model=List[DailyRecommendation])
 async def get_recommendations(
     request: RecommendationRequest,
     current_user_id: str = Depends(get_current_user_id)
@@ -64,61 +62,62 @@ async def get_recommendations(
     if not user_profile:
         raise HTTPException(status_code=404, detail="User profile not found")
 
-    spot_recommendations = defaultdict(lambda: {
-        "day_offsets": defaultdict(list)
-    })
+    daily_options = defaultdict(list)
 
     for spot_id in request.spot_ids:
         spot_details = spots_map.get(spot_id)
-        forecasts = forecasts_map.get(spot_id, [])
+        # CORREÇÃO AQUI: Acessar o dicionário correto
+        spot_forecasts = forecasts_map.get(spot_id, [])
         
         user_prefs = prefs_map.get(spot_id)
         if not user_prefs or not user_prefs.get('is_active'):
             user_prefs = await queries.get_default_preferences_by_level(user_profile.get('surf_level', 'intermediario'))
-            # Adiciona IDs para validação do schema no frontend
             user_prefs.update({"user_id": current_user_id, "spot_id": spot_id, "preference_id": 0, "is_active": False})
 
-        if not spot_details or not forecasts:
+        if not spot_details or not spot_forecasts:
             continue
-        
-        spot_recommendations[spot_id]['preferences_used_for_spot'] = user_prefs
 
-        for forecast in forecasts:
+        for forecast in spot_forecasts:
             forecast_time = forecast['timestamp_utc'].time()
-            forecast_day_offset = (forecast['timestamp_utc'].date() - start_utc.date()).days
+            forecast_date = forecast['timestamp_utc'].date()
+            forecast_day_offset = (forecast_date - start_utc.date()).days
 
             if forecast_day_offset in day_offsets and request.time_window.start <= forecast_time <= request.time_window.end:
                 score_data = await calculate_overall_score(forecast, user_prefs, spot_details, user_profile)
                 
                 if score_data['overall_score'] > 30:
-                    hourly_rec = {
+                    daily_options[forecast_date].append({
                         "spot_id": spot_id,
                         "spot_name": spot_details['name'],
                         "timestamp_utc": forecast['timestamp_utc'],
                         "forecast_conditions": forecast,
                         **score_data
-                    }
-                    spot_recommendations[spot_id]['day_offsets'][forecast_day_offset].append(hourly_rec)
+                    })
 
     final_response = []
-    for spot_id, data in spot_recommendations.items():
-        if not data['day_offsets']: continue
+    for date, hourly_recs in sorted(daily_options.items()):
+        
+        best_spot_sessions = {}
+        for rec in hourly_recs:
+            spot_id = rec['spot_id']
+            if spot_id not in best_spot_sessions or rec['overall_score'] > best_spot_sessions[spot_id].best_overall_score:
+                best_spot_sessions[spot_id] = SpotDailySummary(
+                    spot_id=rec['spot_id'],
+                    spot_name=rec['spot_name'],
+                    best_hour_utc=rec['timestamp_utc'],
+                    best_overall_score=rec['overall_score'],
+                    detailed_scores=rec['detailed_scores'],
+                    forecast_conditions=rec['forecast_conditions']
+                )
+        
+        if not best_spot_sessions:
+            continue
 
-        day_offsets_list = [
-            DayOffsetRecommendations(
-                day_offset=offset,
-                recommendations=sorted(recs, key=lambda x: x['overall_score'], reverse=True)
-            )
-            for offset, recs in data['day_offsets'].items()
-        ]
+        ranked_spots_for_day = sorted(best_spot_sessions.values(), key=lambda x: x.best_overall_score, reverse=True)
 
-        if not day_offsets_list: continue
-
-        final_response.append(SpotRecommendation(
-            spot_id=spot_id,
-            spot_name=spots_map[spot_id]['name'],
-            preferences_used_for_spot=data['preferences_used_for_spot'],
-            day_offsets=sorted(day_offsets_list, key=lambda x: x.day_offset)
+        final_response.append(DailyRecommendation(
+            date=date,
+            ranked_spots=ranked_spots_for_day
         ))
         
     return final_response
