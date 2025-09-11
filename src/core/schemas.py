@@ -153,3 +153,4 @@ class Recommendation(BaseModel):
     timestamp_utc: datetime.datetime
     overall_score: float
     detailed_scores: DetailedScores
+    forecast_conditions: ForecastConditions 

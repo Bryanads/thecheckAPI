@@ -101,6 +101,7 @@ async def get_recommendations(
                     "spot_id": spot_id,
                     "spot_name": spot_details['name'],
                     "timestamp_utc": forecast['timestamp_utc'],
+                    "forecast_conditions": forecast, 
                     **score_data
                 })
 
