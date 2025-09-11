@@ -156,7 +156,16 @@ async def get_preferences_by_user_and_spot(user_id: str, spot_id: int) -> Option
             "SELECT * FROM user_spot_preferences WHERE user_id = $1 AND spot_id = $2",
             user_id, spot_id
         )
-        return dict(row) if row else None
+        if not row:
+            return None
+        
+        # CORREÇÃO: Converte o objeto UUID retornado pelo banco para uma string,
+        # garantindo que o tipo corresponda ao schema do Pydantic.
+        preferences = dict(row)
+        if 'user_id' in preferences and preferences['user_id'] is not None:
+            preferences['user_id'] = str(preferences['user_id'])
+            
+        return preferences
     finally:
         await conn.close()
 
