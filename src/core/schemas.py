@@ -124,7 +124,8 @@ class DailyForecast(BaseModel):
 class SpotForecastResponse(BaseModel):
     spot_id: int
     spot_name: str
-    forecasts: List[HourlyData] 
+    forecasts: List[HourlyData]
+
 
 class DaySelection(BaseModel):
     type: str 
@@ -138,7 +139,7 @@ class RecommendationRequest(BaseModel):
     spot_ids: List[int]
     day_selection: DaySelection
     time_window: TimeWindow
-    limit: int = 10
+    limit: Optional[int] = None # Tornando o limite opcional
 
 class DetailedScores(BaseModel):
     wave_score: float
@@ -147,10 +148,22 @@ class DetailedScores(BaseModel):
     air_temperature_score: float
     water_temperature_score: float
 
-class Recommendation(BaseModel):
+# --- NOVOS SCHEMAS PARA A RESPOSTA DE RECOMENDAÇÃO ---
+
+class HourlyRecommendation(BaseModel):
     spot_id: int
     spot_name: str
     timestamp_utc: datetime.datetime
     overall_score: float
     detailed_scores: DetailedScores
-    forecast_conditions: ForecastConditions 
+    forecast_conditions: ForecastConditions
+
+class DayOffsetRecommendations(BaseModel):
+    day_offset: int
+    recommendations: List[HourlyRecommendation]
+
+class SpotRecommendation(BaseModel):
+    spot_id: int
+    spot_name: str
+    preferences_used_for_spot: Preference
+    day_offsets: List[DayOffsetRecommendations]
