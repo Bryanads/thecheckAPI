@@ -52,21 +52,22 @@ async def update_profile(user_id: str, updates: Dict[str, Any]) -> Optional[Dict
 
     conn = await get_connection()
     try:
-        # Adiciona o campo 'updated_at' para ser atualizado automaticamente
-        updates_with_timestamp = updates.copy()
-        updates_with_timestamp['updated_at'] = 'NOW()'
-
-        # Constrói a query SQL dinamicamente para evitar injeção de SQL
-        set_clause = ", ".join(f"{key} = ${i + 2}" for i, key in enumerate(updates_with_timestamp.keys()))
+        # Constrói a query SQL dinamicamente
+        set_parts = [f"{key} = ${i + 2}" for i, key in enumerate(updates.keys())]
+        set_parts.append("updated_at = NOW()")
+        set_clause = ", ".join(set_parts)
         
         query = f"UPDATE profiles SET {set_clause} WHERE id = $1 RETURNING *;"
         
-        # Prepara os valores na ordem correta para a query
-        values = [user_id] + list(updates_with_timestamp.values())
+        values = [user_id] + list(updates.values())
 
         updated_row = await conn.fetchrow(query, *values)
         
-        return dict(updated_row) if updated_row else None
+        if updated_row:
+            updated_profile = dict(updated_row)
+            updated_profile['id'] = str(updated_profile['id'])
+            return updated_profile
+        return None
     finally:
         await conn.close()
 
@@ -94,7 +95,9 @@ async def create_preset(user_id: str, preset_data: Dict[str, Any]) -> Dict[str, 
             preset_data['day_selection_values'],
             preset_data['is_default']
         )
-        return dict(row)
+        new_preset = dict(row)
+        new_preset['user_id'] = str(new_preset['user_id'])
+        return new_preset
     finally:
         await conn.close()
 
@@ -159,8 +162,6 @@ async def get_preferences_by_user_and_spot(user_id: str, spot_id: int) -> Option
         if not row:
             return None
         
-        # CORREÇÃO: Converte o objeto UUID retornado pelo banco para uma string,
-        # garantindo que o tipo corresponda ao schema do Pydantic.
         preferences = dict(row)
         if 'user_id' in preferences and preferences['user_id'] is not None:
             preferences['user_id'] = str(preferences['user_id'])
@@ -192,7 +193,6 @@ async def get_default_preferences_by_level(surf_level: str) -> Dict[str, Any]:
     }
 
 async def create_or_update_preferences(user_id: str, spot_id: int, updates: Dict[str, Any]) -> Dict[str, Any]:
-
     """
     Cria ou atualiza (UPSERT) as preferências de um usuário para um spot.
     """
@@ -210,7 +210,13 @@ async def create_or_update_preferences(user_id: str, spot_id: int, updates: Dict
         values = [user_id, spot_id] + list(updates.values())
         
         row = await conn.fetchrow(query, *values)
-        return dict(row)
+        
+        # AQUI A CORREÇÃO: Converte o UUID para string antes de retornar
+        updated_preferences = dict(row)
+        if 'user_id' in updated_preferences and updated_preferences['user_id'] is not None:
+            updated_preferences['user_id'] = str(updated_preferences['user_id'])
+        
+        return updated_preferences
     finally:
         await conn.close()
 
@@ -231,4 +237,3 @@ async def get_forecasts_for_spot(spot_id: int, start_utc: datetime.datetime, end
         return [dict(row) for row in rows]
     finally:
         await conn.close()
-
