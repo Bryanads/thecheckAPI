@@ -6,23 +6,26 @@ from typing import Dict, Any
 # --- Lógica do Score de Onda (Baseado em wave_score.py) ---
 def _calculate_swell_size_score(swell_height: float, ideal_height: float, max_height: float) -> float:
     if swell_height > max_height:
-        return -100.0  # Penalidade máxima para ondas muito grandes
-    if swell_height < (ideal_height * 0.3): # Inferindo um mínimo
+        return -100.0
+    if swell_height < (ideal_height * 0.3):
         return 0.0
     
     if swell_height <= ideal_height:
-        # Curva crescente de 0 a 100
         return 100 * (swell_height / ideal_height)
     else:
-        # Curva decrescente de 100 a 0
         range_size = max_height - ideal_height
         if range_size <= 0: return 0.0
         return 100 * (1 - (swell_height - ideal_height) / range_size)
 
 def _calculate_swell_period_score(swell_period: float, surf_level: str) -> float:
-    ideal_periods = {'iniciante': 8, 'intermediario': 11, 'avancado': 14}
-    ideal_period = ideal_periods.get(surf_level, 11)
-    # Curva de sino simples
+    # *** DICIONÁRIO ATUALIZADO AQUI ***
+    ideal_periods = {
+        'iniciante': 8, 
+        'maroleiro': 10,  # Maroleiro gosta de onda mais em pé, com mais linha
+        'intermediario': 12,
+        'pro': 15         # Pro busca o máximo de power
+    }
+    ideal_period = ideal_periods.get(surf_level, 12) # Padrão para intermediário
     score = np.exp(-((swell_period - ideal_period) ** 2) / ideal_period) * 100
     return score
 
