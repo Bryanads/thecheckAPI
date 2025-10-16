@@ -1,6 +1,7 @@
 from src.db.connection import get_connection, release_connection
 from typing import List, Dict, Any, Optional
 import datetime
+import json
 
 async def get_all_spots() -> List[Dict[str, Any]]:
     """
@@ -196,7 +197,7 @@ async def get_preferences_by_user_and_spot(user_id: str, spot_id: int) -> Dict[s
 
     # 1. Começa com as preferências genéricas como base
     final_prefs = await get_generic_preferences_by_level(surf_level)
-    
+
     conn = await get_connection()
     try:
         # 2. Tenta sobrescrever com as preferências do pico
@@ -222,12 +223,12 @@ async def get_preferences_by_user_and_spot(user_id: str, spot_id: int) -> Dict[s
             })
     finally:
         await conn.close()
-    
+
     final_prefs.setdefault('preference_id', 0)
     final_prefs.setdefault('user_id', user_id)
     final_prefs.setdefault('spot_id', spot_id)
     final_prefs.setdefault('is_active', False)
-    
+
     return final_prefs
 
 
@@ -238,7 +239,7 @@ async def create_or_update_user_preferences(user_id: str, spot_id: int, updates:
     conn = await get_connection()
     try:
         set_clause = ", ".join(f"{key} = EXCLUDED.{key}" for key in updates.keys())
-        
+
         # *** LINHA CORRIGIDA ***
         values_placeholders = ", ".join(f"${i + 3}" for i in range(len(updates)))
 
@@ -249,13 +250,13 @@ async def create_or_update_user_preferences(user_id: str, spot_id: int, updates:
         RETURNING *;
         """
         values = [user_id, spot_id] + list(updates.values())
-        
+
         row = await conn.fetchrow(query, *values)
-        
+
         updated_preferences = dict(row)
         if 'user_id' in updated_preferences and updated_preferences['user_id'] is not None:
             updated_preferences['user_id'] = str(updated_preferences['user_id'])
-        
+
         return updated_preferences
     finally:
         await conn.close()
@@ -268,12 +269,29 @@ async def get_forecasts_for_spot(spot_id: int, start_utc: datetime.datetime, end
     try:
         rows = await conn.fetch(
             """
-            SELECT * FROM forecasts 
+            SELECT * FROM forecasts
             WHERE spot_id = $1 AND timestamp_utc BETWEEN $2 AND $3
             ORDER BY timestamp_utc;
             """,
             spot_id, start_utc, end_utc
         )
         return [dict(row) for row in rows]
+    finally:
+        await conn.close()
+
+async def get_cached_recommendations(user_id: str, cache_key: str) -> Optional[List[Dict[str, Any]]]:
+    """
+    Busca as recomendações pré-calculadas usando uma chave de cache específica.
+    """
+    conn = await get_connection()
+    try:
+        row = await conn.fetchrow(
+            # A query agora usa cache_key
+            "SELECT recommendations_payload FROM user_recommendation_cache WHERE user_id = $1 AND cache_key = $2",
+            user_id, cache_key
+        )
+        if row and row['recommendations_payload']:
+            return json.loads(row['recommendations_payload'])
+        return None
     finally:
         await conn.close()

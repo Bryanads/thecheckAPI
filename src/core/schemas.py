@@ -22,7 +22,7 @@ class Spot(BaseModel):
         from_attributes = True
 
 class Profile(BaseModel):
-    id: str 
+    id: str
     name: str
     email: EmailStr
     location: Optional[str] = None
@@ -48,7 +48,7 @@ class PresetBase(BaseModel):
     spot_ids: List[int]
     start_time: datetime.time
     end_time: datetime.time
-    day_selection_type: str 
+    day_selection_type: str
     day_selection_values: List[int]
     is_default: bool = False
 
@@ -66,7 +66,7 @@ class PresetUpdate(BaseModel):
 
 class Preset(PresetBase):
     preset_id: int
-    user_id: str 
+    user_id: str
 
     class Config:
         from_attributes = True
@@ -128,7 +128,7 @@ class SpotForecastResponse(BaseModel):
 
 
 class DaySelection(BaseModel):
-    type: str 
+    type: str
     values: List[int]
 
 class TimeWindow(BaseModel):
@@ -139,7 +139,8 @@ class RecommendationRequest(BaseModel):
     spot_ids: List[int]
     day_selection: DaySelection
     time_window: TimeWindow
-    limit: Optional[int] = None # Tornando o limite opcional
+    cache_key: Optional[str] = None
+    limit: Optional[int] = None
 
 class DetailedScores(BaseModel):
     wave_score: float
